@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 func main() {
 	if exec, close, err := Send("127.0.0.1",22,"154.208.143.31",9999,"ac fun");err != nil{
@@ -12,4 +15,6 @@ func main() {
 			fmt.Println("exec:", err)
 		}
 	}
+	fmt.Println("success")
+	time.Sleep(time.Second*2)
 }

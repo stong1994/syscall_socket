@@ -123,7 +123,7 @@ func NewTcpData(psdHeader *PsdHeader, tcpHeader *TCPHeader, data string) []byte 
 }
 
 func Send(srcIp string, srcPort uint16, dstIp string, dstPort uint16, data string) (exec func() error, close func(), err error) {
-	sockfd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
+	sockfd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_TCP)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -136,6 +136,7 @@ func Send(srcIp string, srcPort uint16, dstIp string, dstPort uint16, data strin
 			addr.Addr[i] = byte(d)
 		}
 	}
+	fmt.Println("addr", addr.Addr)
 	addr.Port = int(dstPort)
 
 	return func() error {
