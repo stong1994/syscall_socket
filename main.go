@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"tcp_server/client"
 	"tcp_server/server"
+	"tcp_server/tcp"
 	"time"
 )
 
@@ -19,7 +19,7 @@ func reciver(){
 
 func sender(){
 	//if exec,closeExec,err := client.Send("93.177.80.131", 8888, "212.22.73.9", 21, "ac fun"); err != nil {
-	if exec, closeExec, err := client.Send("127.0.0.1",22,"154.208.143.31",9999,"ac fun");err != nil{
+	if exec, closeExec, err := tcp.Send("127.0.0.1",8888,"154.208.143.31",9999,"ac fun");err != nil{
 		fmt.Println("err is :", err)
 	}else{
 		defer closeExec()

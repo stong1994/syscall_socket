@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"tcp_server/tcp"
 	"testing"
 )
 
@@ -11,7 +12,7 @@ var (
 )
 
 func TestSendSyn(t *testing.T) {
-	if exec, close, err := Send("127.0.0.1",22,"154.208.143.31",9999,"ac fun");err != nil{
+	if exec, close, err := tcp.Send("127.0.0.1",22,"154.208.143.31",9999,"ac fun");err != nil{
 			fmt.Println("err is :",err)
 	}else {
 		defer close()
