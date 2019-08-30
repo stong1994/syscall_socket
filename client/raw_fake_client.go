@@ -54,7 +54,7 @@ func (s *rawFakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLa
 
 	psdHeader := newPsdHeader(srcIP, dstIP)
 
-	payload := payloadLayer.(gopacket.Payload).Payload()
+	payload := payloadLayer.(*gopacket.Payload).Payload()
 
 	data, err := newTcpData(psdHeader, transferHeader(transferLayer), payload)
 	err = s.send(data)
@@ -66,7 +66,9 @@ func (s *rawFakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLa
 
 func transferHeader(transferLayer gopacket.SerializableLayer) ( *TCPHeader) {
 	var (
-		tcpHeader = TCPHeader{}
+		tcpHeader = TCPHeader{
+			Offset:   uint8(uint16(unsafe.Sizeof(TCPHeader{}))/4) << 4,
+		}
 	)
 	switch transferLayer.(type) {
 	case *layers.TCP:
