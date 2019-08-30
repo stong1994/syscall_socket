@@ -62,6 +62,10 @@ func (s *client) close() {
 // reply.  This is pretty slow right now, since it blocks on the ARP
 // request/reply.
 func (s *client) getHwAddr() (net.HardwareAddr, error) {
+	var (
+		data []byte
+		err  error
+	)
 	start := time.Now()
 	arpDst := s.dstIP
 	if s.gw != nil {
@@ -86,15 +90,20 @@ func (s *client) getHwAddr() (net.HardwareAddr, error) {
 	}
 	// Send a single ARP request packet (we never retry a send, since this
 	// is just an example ;)
-	if err := s.send(&eth, &arp); err != nil {
+	if data, err = s.serializeData(&eth, &arp); err != nil {
 		return nil, err
 	}
+	err = s.send(data)
+	if err != nil {
+		return nil, err
+	}
+
 	// Wait 3 seconds for an ARP reply.
 	for {
 		if time.Since(start) > time.Second*3 {
 			return nil, errors.New("timeout getting ARP reply")
 		}
-		data, _, err := s.handle.ReadPacketData()
+		data, _, err = s.handle.ReadPacketData()
 		if err == pcap.NextErrorTimeoutExpired {
 			continue
 		} else if err != nil {
@@ -108,4 +117,16 @@ func (s *client) getHwAddr() (net.HardwareAddr, error) {
 			}
 		}
 	}
+}
+
+func (s *client) serializeData(l ...gopacket.SerializableLayer) ([]byte, error) {
+	if err := gopacket.SerializeLayers(s.buf, s.opts, l...); err != nil {
+		return nil, err
+	}
+	return s.buf.Bytes(), nil
+}
+
+// send sends the given layers as a single packet on the network.
+func (s *client) send(data []byte) error {
+	return s.handle.WritePacketData(data)
 }

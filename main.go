@@ -14,7 +14,7 @@ func main() {
 	var c api.IClient
 	srcIP, dstIP, srcPort, dstPort := param()
 	fmt.Println(srcIP, dstIP, srcPort, dstPort)
-	c, err := client.NewFakeClient(srcIP, dstIP, srcPort, dstPort)
+	c, err := client.NewRawFakeClient(srcIP, dstIP, srcPort, dstPort)
 	if err != nil {
 		panic(err)
 	}

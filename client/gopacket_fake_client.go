@@ -9,21 +9,21 @@ import (
 	"net"
 )
 
-type fakeClient struct {
+type gopacketFakeClient struct {
 	srcIP net.IP
 	srcPort layers.TCPPort
 	dstPort layers.TCPPort
 	*client
 }
 
-func NewFakeClient(srcIP, dstIP net.IP, srcPort, dstPort layers.TCPPort) (*fakeClient, error) {
+func NewGopacketFakeClient(srcIP, dstIP net.IP, srcPort, dstPort layers.TCPPort) (*gopacketFakeClient, error) {
 	defer util.Run()()
 	router, err := routing.New()
 	if err != nil {
 		return nil, err
 	}
 	client, err := newClient(dstIP, router)
-	return &fakeClient{
+	return &gopacketFakeClient{
 		srcIP:srcIP,
 		srcPort:srcPort,
 		dstPort:dstPort,
@@ -31,12 +31,12 @@ func NewFakeClient(srcIP, dstIP net.IP, srcPort, dstPort layers.TCPPort) (*fakeC
 	}, nil
 }
 
-func (fc *fakeClient) Close() {
+func (fc *gopacketFakeClient) Close() {
 	fc.client.close()
 }
 
 // 实际上做了两件事：构造ipv4 和 给layer计算checksum （违反单一责任原则）
-func (s *fakeClient) constructIPv4(layer gopacket.SerializableLayer) (*layers.IPv4, error) {
+func (s *gopacketFakeClient) constructIPv4(layer gopacket.SerializableLayer) (*layers.IPv4, error) {
 	var (
 		err error
 		ip4 = layers.IPv4{
@@ -66,8 +66,12 @@ func (s *fakeClient) constructIPv4(layer gopacket.SerializableLayer) (*layers.IP
 	return &ip4, nil
 }
 
-// layer 为TCP或者UDP
-func (s *fakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLayer) (int, error) {
+// transferLayer 为TCP或者UDP
+func (s *gopacketFakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLayer) (int, error) {
+	var (
+		data []byte
+		err error
+	)
 	// First off, get the MAC address we should be sending packets to.
 	hwaddr, err := s.getHwAddr()
 	if err != nil {
@@ -84,19 +88,14 @@ func (s *fakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLayer
 	if err != nil {
 		return 0, err
 	}
-
-	if err := s.send(&eth, ip4, transferLayer, payloadLayer); err != nil {
+	if data, err = s.serializeData(&eth, ip4, transferLayer, payloadLayer); err != nil {
 		return 0, fmt.Errorf("error sending to port %v: %v", s.dstPort, err)
 	}
-	return len(s.buf.Bytes()), nil
-}
-
-// send sends the given layers as a single packet on the network.
-func (s *client) send(l ...gopacket.SerializableLayer) error {
-	if err := gopacket.SerializeLayers(s.buf, s.opts, l...); err != nil {
-		return err
+	err = s.send(data)
+	if err != nil {
+		return 0, err
 	}
-	return s.handle.WritePacketData(s.buf.Bytes())
+	return len(s.buf.Bytes()), nil
 }
 
 //func main() {

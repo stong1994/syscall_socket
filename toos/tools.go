@@ -33,3 +33,14 @@ func IntToBytes(n int32) []byte {
 	}
 	return bytesBuffer.Bytes()
 }
+
+//字节转换成整形
+func BytesToInt(b []byte) (uint32, error) {
+	bytesBuffer := bytes.NewBuffer(b)
+	var x uint32
+	err := binary.Read(bytesBuffer, binary.LittleEndian, &x)
+	if err != nil {
+		return 0, err
+	}
+	return x, nil
+}
