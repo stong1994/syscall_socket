@@ -70,12 +70,3 @@ func pkt() []byte {
 	return buf.Bytes()
 }
 
-//整形转换成字节
-func IntToBytes(n int32) []byte {
-	bytesBuffer := bytes.NewBuffer([]byte{})
-	err := binary.Write(bytesBuffer, binary.BigEndian, n)
-	if err != nil {
-		panic(err)
-	}
-	return bytesBuffer.Bytes()
-}

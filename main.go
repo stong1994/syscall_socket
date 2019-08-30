@@ -12,6 +12,7 @@ import (
 func main() {
 	var c api.IClient
 	srcIP, dstIP, srcPort, dstPort := param()
+	fmt.Println(srcIP, dstIP, srcPort, dstPort)
 	c, err := client.NewFakeClient(srcIP, dstIP, srcPort, dstPort)
 	if err != nil {
 		panic(err)
@@ -19,7 +20,7 @@ func main() {
 	defer c.Close()
 
 	tcp := layers.TCP{
-		//BaseLayer: layers.BaseLayer{IntToBytes(100), IntToBytes(32)},
+		BaseLayer: layers.BaseLayer{tools.IntToBytes(100), tools.IntToBytes(32)},
 		SrcPort:    srcPort,
 		DstPort:    dstPort,
 		Seq:        102,
@@ -39,7 +40,7 @@ func main() {
 }
 
 func param() (srcIP, dstIP net.IP, srcPort, dstPort layers.TCPPort) {
-	srcIP, _ = tools.String2IPV4("1,2,3,4")
+	srcIP, _ = tools.String2IPV4("1.2.3.4")
 	dstIP, _ = tools.String2IPV4("154.208.143.31")
 	srcPort = tools.Int2TCPPort(123)
 	dstPort = tools.Int2TCPPort(9999)
