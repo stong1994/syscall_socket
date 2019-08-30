@@ -12,8 +12,6 @@ import (
 )
 
 func main() {
-	//srcIP := net.ParseIP("1.2.3.4")
-	//dstIP := net.ParseIP("")
 	var err error
 	fd, e := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_TCP)
 	if e != nil {
