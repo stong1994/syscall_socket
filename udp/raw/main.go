@@ -20,10 +20,10 @@ func checkSum(msg []byte) uint16 {
 func ipHeader(dst, src net.IP, buff []byte) *ipv4.Header {
 	//填充ip首部
 	iph := &ipv4.Header{
-		Version:  ipv4.Version,
+		Version: ipv4.Version,
 		//IP头长一般是20
-		Len:      ipv4.HeaderLen,
-		TOS:      0x00,
+		Len: ipv4.HeaderLen,
+		TOS: 0x00,
 		//buff为数据
 		TotalLen: ipv4.HeaderLen + len(buff),
 		TTL:      64,
@@ -71,7 +71,7 @@ func udpHeader(dst, src net.IP, buff []byte) []byte {
 	return udph
 }
 
-func send()  {
+func send() {
 	listener, err := net.ListenPacket("ip4:udp", "192.168.1.104")
 	if err != nil {
 		log.Fatal(err)
@@ -89,7 +89,7 @@ func send()  {
 	//目的IP
 	dst := net.IPv4(154, 208, 143, 31)
 	//源IP
-	src := net.IPv4(128,208, 234, 123)
+	src := net.IPv4(128, 208, 234, 123)
 
 	iph := ipHeader(dst, src, data)
 	udph := udpHeader(dst, src, data)
@@ -99,6 +99,6 @@ func send()  {
 	}
 }
 
-func main()  {
+func main() {
 	send()
 }

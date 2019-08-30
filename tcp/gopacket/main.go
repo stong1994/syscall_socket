@@ -44,14 +44,14 @@ func pkt() []byte {
 
 	tcp := layers.TCP{
 		//BaseLayer: layers.BaseLayer{IntToBytes(100), IntToBytes(32)},
-		SrcPort:    8888,
-		DstPort:    9999,
-		Seq:        102,
-		Ack:        103,
-		SYN:        true,
-		Window:     6666,
+		SrcPort: 8888,
+		DstPort: 9999,
+		Seq:     102,
+		Ack:     103,
+		SYN:     true,
+		Window:  6666,
 		//Checksum:   7777,
-		Urgent:     1,
+		Urgent: 1,
 	}
 	err := tcp.SetNetworkLayerForChecksum(ip4)
 	if err != nil {
@@ -69,4 +69,3 @@ func pkt() []byte {
 	}
 	return buf.Bytes()
 }
-

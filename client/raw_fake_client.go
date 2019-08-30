@@ -3,14 +3,11 @@ package client
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/examples/util"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/routing"
 	"net"
-	"strconv"
-	"strings"
 	tools "tcp_server/toos"
 	"unsafe"
 )
@@ -41,7 +38,7 @@ func (fc *rawFakeClient) Close() {
 	fc.client.close()
 }
 
-// layer 为TCP或者UDP
+// transferLayer 为TCP或者UDP
 func (r *rawFakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLayer) (int, error) {
 	srcIP, err := tools.BytesToInt(r.srcIP)
 	if err != nil {
@@ -52,10 +49,7 @@ func (r *rawFakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLa
 		return 0, err
 	}
 
-	srcIP = inetAddr("1.2.3.4")
-	dstIP = inetAddr("154.208.143.31")
-
-	psdHeader := newPsdHeader(srcIP, dstIP)
+	ipHeader := newIPHeader(srcIP, dstIP)
 
 	payload := payloadLayer.(*gopacket.Payload).Payload()
 
@@ -63,7 +57,10 @@ func (r *rawFakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLa
 	if err != nil {
 		return 0, err
 	}
-	data, err := newTcpData(ethernetHeader, psdHeader, transferHeader(transferLayer), payload)
+	data, err := newTcpData(ethernetHeader, ipHeader, transferHeader(transferLayer), payload)
+	if err != nil {
+		return 0, err
+	}
 	err = r.send(data)
 	if err != nil {
 		return 0, err
@@ -72,7 +69,7 @@ func (r *rawFakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLa
 	return len(data), nil
 }
 
-func transferHeader(transferLayer gopacket.SerializableLayer) (*TCPHeader) {
+func transferHeader(transferLayer gopacket.SerializableLayer) *TCPHeader {
 	var (
 		tcpHeader = TCPHeader{
 			Offset: uint8(uint16(unsafe.Sizeof(TCPHeader{}))/4) << 4,
@@ -115,60 +112,6 @@ func calcFlag(tcp *layers.TCP) uint8 {
 	return flag
 }
 
-const (
-	FIN = 1  // 00 0001
-	SYN = 2  // 00 0010
-	RST = 4  // 00 0100
-	PSH = 8  // 00 1000
-	ACK = 16 // 01 0000
-	URG = 32 // 10 0000
-)
-
-type TCPHeader struct {
-	SrcPort   uint16
-	DstPort   uint16
-	SeqNum    uint32
-	AckNum    uint32
-	Offset    uint8
-	Flag      uint8
-	Window    uint16
-	Checksum  uint16
-	UrgentPtr uint16
-}
-
-type PsdHeader struct {
-	SrcAddr   uint32
-	DstAddr   uint32
-	Zero      uint8
-	ProtoType uint8
-	TcpLength uint16
-	Version   uint8
-	TTL       uint8
-}
-
-type EthernetHeader struct {
-	SrcMAC       []byte
-	DstMAC       []byte
-	EthernetType uint16
-}
-
-func inetAddr(host string) uint32 {
-	var (
-		segments = strings.Split(host, ".")
-		ip       [4]uint64
-		ret      uint64
-	)
-	if len(segments) != 4 {
-		fmt.Println(host)
-		return 0
-	}
-	for i := 0; i < 4; i++ {
-		ip[i], _ = strconv.ParseUint(segments[i], 10, 64)
-	}
-	ret = ip[3]<<24 + ip[2]<<16 + ip[1]<<8 + ip[0]
-	return uint32(ret)
-}
-
 func checkSum(data []byte) uint16 {
 	var (
 		sum    uint32
@@ -187,24 +130,43 @@ func checkSum(data []byte) uint16 {
 	return uint16(^sum)
 }
 
+func converEthernetHeader(eth *EthernetHeader) []byte {
+	var buffer bytes.Buffer
+	err := binary.Write(&buffer, binary.BigEndian, eth.DstMAC)
+	if err != nil {
+		panic(err)
+	}
+	err = binary.Write(&buffer, binary.BigEndian, eth.SrcMAC)
+	if err != nil {
+		panic(err)
+	}
+	err = binary.Write(&buffer, binary.BigEndian, eth.EthernetType)
+	if err != nil {
+		panic(err)
+	}
+
+	return buffer.Bytes()
+}
+
 func (r *rawFakeClient) newEthernetHeader() (*EthernetHeader, error) {
 	hwaddr, err := r.getHwAddr()
 	if err != nil {
 		return nil, err
 	}
 	return &EthernetHeader{
-		SrcMAC: r.iface.HardwareAddr,
-		DstMAC: hwaddr,
+		SrcMAC:       r.iface.HardwareAddr,
+		DstMAC:       hwaddr,
 		EthernetType: uint16(layers.EthernetTypeIPv4),
 	}, nil
 }
 
-func newPsdHeader(srcHost uint32, dstHost uint32) *PsdHeader {
-	return &PsdHeader{
-		SrcAddr: srcHost,
-		DstAddr: dstHost,
-		Version: 4,
-		TTL:     64,
+func newIPHeader(srcHost uint32, dstHost uint32) *IPHeader {
+	return &IPHeader{
+		SrcIP:      srcHost,
+		DstIP:      dstHost,
+		VersionIHL: uint8(4)<<4 + 5,
+		Protocol:   6,
+		TTL:        64,
 	}
 }
 
@@ -224,11 +186,15 @@ func newTcpHeader(srcPort uint16, dstPort uint16, seqNum, ackNum uint32, flag ui
 	}
 }
 
-func newTcpData(ethHeader *EthernetHeader, psdHeader *PsdHeader, tcpHeader *TCPHeader, data []byte) ([]byte, error) {
-	psdHeader.TcpLength = uint16(unsafe.Sizeof(TCPHeader{})) + uint16(len(data))
+func newTcpData(ethHeader *EthernetHeader, psdHeader *IPHeader, tcpHeader *TCPHeader, data []byte) ([]byte, error) {
+	eth := converEthernetHeader(ethHeader)
 	var buffer bytes.Buffer
-	/*buffer用来写入两种首部来求得校验和*/
-	err := binary.Write(&buffer, binary.BigEndian, psdHeader)
+	// buffer用来写入两种首部来求得校验和
+	err := binary.Write(&buffer, binary.BigEndian, eth)
+	if err != nil {
+		return nil, err
+	}
+	err = binary.Write(&buffer, binary.BigEndian, psdHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -236,14 +202,15 @@ func newTcpData(ethHeader *EthernetHeader, psdHeader *PsdHeader, tcpHeader *TCPH
 	if err != nil {
 		return nil, err
 	}
-	err = binary.Write(&buffer, binary.BigEndian, ethHeader)
+
+	tcpHeader.Checksum = checkSum(buffer.Bytes())
+	// 接下来清空buffer，填充实际要发送的部分
+	buffer.Reset()
+	err = binary.Write(&buffer, binary.BigEndian, eth)
 	if err != nil {
 		return nil, err
 	}
-	tcpHeader.Checksum = checkSum(buffer.Bytes())
-	/*接下来清空buffer，填充实际要发送的部分*/
-	buffer.Reset()
-	err = binary.Write(&buffer, binary.BigEndian, ethHeader)
+	err = binary.Write(&buffer, binary.BigEndian, psdHeader)
 	if err != nil {
 		return nil, err
 	}

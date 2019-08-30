@@ -45,7 +45,7 @@ func createUDPChecksumTestLayer() (udp *layers.UDP) {
 	return
 }
 
-func pkt() []byte{
+func pkt() []byte {
 	ip4 := createIPv4ChecksumTestLayer()
 	ip4.Protocol = layers.IPProtocolUDP
 

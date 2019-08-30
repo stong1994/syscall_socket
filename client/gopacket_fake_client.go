@@ -10,7 +10,7 @@ import (
 )
 
 type gopacketFakeClient struct {
-	srcIP net.IP
+	srcIP   net.IP
 	srcPort layers.TCPPort
 	dstPort layers.TCPPort
 	*client
@@ -24,10 +24,10 @@ func NewGopacketFakeClient(srcIP, dstIP net.IP, srcPort, dstPort layers.TCPPort)
 	}
 	client, err := newClient(dstIP, router)
 	return &gopacketFakeClient{
-		srcIP:srcIP,
-		srcPort:srcPort,
-		dstPort:dstPort,
-		client: client,
+		srcIP:   srcIP,
+		srcPort: srcPort,
+		dstPort: dstPort,
+		client:  client,
 	}, nil
 }
 
@@ -40,10 +40,10 @@ func (s *gopacketFakeClient) constructIPv4(layer gopacket.SerializableLayer) (*l
 	var (
 		err error
 		ip4 = layers.IPv4{
-			SrcIP:    s.srcIP,
-			DstIP:    s.dstIP,
-			Version:  4,
-			TTL:      64,
+			SrcIP:   s.srcIP,
+			DstIP:   s.dstIP,
+			Version: 4,
+			TTL:     64,
 		}
 	)
 	// check layer type
@@ -70,10 +70,10 @@ func (s *gopacketFakeClient) constructIPv4(layer gopacket.SerializableLayer) (*l
 func (s *gopacketFakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLayer) (int, error) {
 	var (
 		data []byte
-		err error
+		err  error
 	)
 	// First off, get the MAC address we should be sending packets to.
-	hwaddr, err := s.getHwAddr()
+	hwaddr, err := s.client.getHwAddr()
 	if err != nil {
 		return 0, err
 	}

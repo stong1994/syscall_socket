@@ -14,21 +14,21 @@ func main() {
 	var c api.IClient
 	srcIP, dstIP, srcPort, dstPort := param()
 	fmt.Println(srcIP, dstIP, srcPort, dstPort)
-	c, err := client.NewRawFakeClient(srcIP, dstIP, srcPort, dstPort)
+	c, err := client.NewGopacketFakeClient(srcIP, dstIP, srcPort, dstPort)
 	if err != nil {
 		panic(err)
 	}
 	defer c.Close()
 
 	tcp := layers.TCP{
-		SrcPort:    srcPort,
-		DstPort:    dstPort,
-		Seq:        102,
-		Ack:        103,
-		SYN:        true,
-		Window:     6666,
+		SrcPort: srcPort,
+		DstPort: dstPort,
+		Seq:     102,
+		Ack:     103,
+		SYN:     true,
+		Window:  6666,
 		//Checksum:   7777,
-		Urgent:     1,
+		Urgent: 1,
 	}
 	udp := createUDPLayer()
 	_ = udp
@@ -38,7 +38,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("len", send)
+	fmt.Println("result len", send)
 }
 
 func param() (srcIP, dstIP net.IP, srcPort, dstPort layers.TCPPort) {

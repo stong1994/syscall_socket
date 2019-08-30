@@ -88,10 +88,10 @@ func NewPsdHeader(srcHost string, dstHost string) *PsdHeader {
 func NewTcpHeader(srcPort uint16, dstPort uint16) *TCPHeader {
 	// 创建TCP内部包头内容
 	return &TCPHeader{
-		SrcPort:  srcPort,
-		DstPort:  dstPort,
-		SeqNum:   102,
-		AckNum:   101,
+		SrcPort: srcPort,
+		DstPort: dstPort,
+		SeqNum:  102,
+		AckNum:  101,
 		// offset(4bite) + 保留字段(6bite)+flag(6bite) = 16bite
 		// offset只占四bite，后四个bite为保留字段所有，因此要向左移4位
 		// flag实际上只占6bite，前两个bite为保留字段所有
@@ -145,19 +145,19 @@ func Send(srcIp string, srcPort uint16, dstIp string, dstPort uint16, data strin
 	addr.Port = int(dstPort)
 
 	return func() error {
-		if err = syscall.Sendto(sockfd, NewTcpData(NewPsdHeader(srcIp, dstIp), NewTcpHeader(srcPort, dstPort), data), 0, &addr); err != nil {
-			return err
-		}
-		return nil
-	}, func() {
-		syscall.Shutdown(sockfd, syscall.SHUT_RDWR)
-	}, nil
+			if err = syscall.Sendto(sockfd, NewTcpData(NewPsdHeader(srcIp, dstIp), NewTcpHeader(srcPort, dstPort), data), 0, &addr); err != nil {
+				return err
+			}
+			return nil
+		}, func() {
+			syscall.Shutdown(sockfd, syscall.SHUT_RDWR)
+		}, nil
 }
 
 func main() {
-	if exec, close, err := Send("128.208.234.123",234,"154.208.143.31",9999,"ac fun");err != nil{
-		fmt.Println("err is :",err)
-	}else {
+	if exec, close, err := Send("128.208.234.123", 234, "154.208.143.31", 9999, "ac fun"); err != nil {
+		fmt.Println("err is :", err)
+	} else {
 		defer close()
 		err := exec()
 		if err != nil {
