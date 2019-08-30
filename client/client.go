@@ -67,7 +67,7 @@ func (s *fakeClient) constructIPv4(layer gopacket.SerializableLayer) (*layers.IP
 }
 
 // layer 为TCP或者UDP
-func (s *fakeClient) Send(layer gopacket.SerializableLayer) (int, error) {
+func (s *fakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLayer) (int, error) {
 	// First off, get the MAC address we should be sending packets to.
 	hwaddr, err := s.getHwAddr()
 	if err != nil {
@@ -80,12 +80,12 @@ func (s *fakeClient) Send(layer gopacket.SerializableLayer) (int, error) {
 		EthernetType: layers.EthernetTypeIPv4,
 	}
 
-	ip4, err := s.constructIPv4(layer) // todo layer是一个接口作为参数传递是否会影响外部的值？应该会
+	ip4, err := s.constructIPv4(transferLayer) // todo layer是一个接口作为参数传递是否会影响外部的值？应该会
 	if err != nil {
 		return 0, err
 	}
 
-	if err := s.send(&eth, ip4, layer); err != nil {
+	if err := s.send(&eth, ip4, transferLayer, payloadLayer); err != nil {
 		return 0, fmt.Errorf("error sending to port %v: %v", s.dstPort, err)
 	}
 	return len(s.buf.Bytes()), nil

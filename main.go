@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"net"
 	"tcp_server/api"
@@ -20,7 +21,6 @@ func main() {
 	defer c.Close()
 
 	tcp := layers.TCP{
-		BaseLayer: layers.BaseLayer{tools.IntToBytes(100), tools.IntToBytes(32)},
 		SrcPort:    srcPort,
 		DstPort:    dstPort,
 		Seq:        102,
@@ -32,7 +32,9 @@ func main() {
 	}
 	udp := createUDPLayer()
 	_ = udp
-	send, err := c.Send(&tcp)
+	data := "hello is me"
+	payload := gopacket.Payload([]byte(data))
+	send, err := c.Send(&tcp, &payload)
 	if err != nil {
 		fmt.Println(err)
 	}
