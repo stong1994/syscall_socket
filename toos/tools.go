@@ -38,7 +38,7 @@ func IntToBytes(n int32) []byte {
 func BytesToInt(b []byte) (uint32, error) {
 	bytesBuffer := bytes.NewBuffer(b)
 	var x uint32
-	err := binary.Read(bytesBuffer, binary.LittleEndian, &x)
+	err := binary.Read(bytesBuffer, binary.BigEndian, &x)
 	if err != nil {
 		return 0, err
 	}
