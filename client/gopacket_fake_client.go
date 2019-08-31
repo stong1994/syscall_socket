@@ -97,35 +97,3 @@ func (s *gopacketFakeClient) Send(transferLayer, payloadLayer gopacket.Serializa
 	}
 	return len(s.buf.Bytes()), nil
 }
-
-//func main() {
-//	defer util.Run()()
-//	router, err := routing.New()
-//	if err != nil {
-//		log.Fatal("routing error:", err)
-//	}
-//
-//	dstIPStr, srcIPStr := "154.208.143.31", "123.4.5.6"
-//	dsrPort, srcPort := 1234, 9999
-//	dstIP, err := tools.String2IPV4(dstIPStr)
-//	if err != nil {
-//		panic(err)
-//	}
-//	srcIP, err := tools.String2IPV4(srcIPStr)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	// Note:  newScanner creates and closes a pcap Handle once for
-//	// every scan target.  We could do much better, were this not an
-//	// example ;)
-//	s, err := NewClient(dstIP, srcIP, router)
-//	if err != nil {
-//		err = fmt.Errorf("unable to create client for %v: %v", dstIP, err)
-//		panic(err)
-//	}
-//	defer s.Close()
-//	if err := s.scan(tools.Int2TCPPort(dsrPort), tools.Int2TCPPort(srcPort)); err != nil {
-//		log.Printf("unable to scan %v: %v", dstIP, err)
-//	}
-//}
