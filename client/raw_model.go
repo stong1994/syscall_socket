@@ -18,7 +18,7 @@ const (
 )
 
 type ITransferLayer interface {
-	SerializeHeader(ip *IPHeader) ([]byte, error)
+	SerializeHeader(ip *IPHeader, data []byte) ([]byte, error)
 }
 
 type EthernetHeader struct {
@@ -72,7 +72,7 @@ func NewIPHeader(srcHost uint32, dstHost uint32, protocol uint8, dataLen uint16)
 	return &IPHeader{
 		Version:  4,
 		IHL:      5,
-		Length:   20 + dataLen,
+		Length:   40 + dataLen,
 		TTL:      64,
 		Protocol: protocol,
 		SrcIP:    srcHost,
@@ -93,8 +93,8 @@ func SerializeIPHeader(ip *IPHeader) []byte {
 	res[7] = uint8(flagAndOffset)
 	res[8] = ip.TTL
 	res[9] = ip.Protocol
-	res[12:] = tools.IntToBytes(ip.SrcIP)
-	res[16:] = tools.IntToBytes(ip.DstIP)
+	copy(res[12:16], tools.IntToBytes(ip.SrcIP))
+	copy(res[16:20], tools.IntToBytes(ip.DstIP))
 	ip.Checksum = checkSum(res)
 	res[10] = uint8(ip.Checksum >> 8)
 	res[11] = uint8(ip.Checksum)
@@ -123,16 +123,16 @@ func NewTcpHeader(srcPort uint16, dstPort uint16, seqNum, ackNum uint32, flag ui
 		// offset(4bite) + 保留字段(6bite)+flag(6bite) = 16bite
 		// offset只占四bite，后四个bite为保留字段所有，因此要向左移4位
 		// flag实际上只占6bite，前两个bite为保留字段所有
-		Offset: uint8(uint16(unsafe.Sizeof(TCPHeader{}))/4) << 4,
-		Flag:   flag,
-		Window: windows,
+		Offset:    uint8(uint16(unsafe.Sizeof(TCPHeader{}))/4) << 4,
+		Flag:      flag,
+		Window:    windows,
 		UrgentPtr: urgentPtr,
 	}
 }
 
-func (tcp *TCPHeader) SerializeHeader(ip *IPHeader) ([]byte, error) {
+func (tcp *TCPHeader) SerializeHeader(ip *IPHeader, data []byte) ([]byte, error) {
 	var buffer bytes.Buffer
-	psdHeader := NewPsdHeader(ip.SrcIP, ip.DstIP, uint8(layers.IPProtocolTCP))
+	psdHeader := NewPsdHeader(ip.SrcIP, ip.DstIP, uint8(layers.IPProtocolTCP), uint16(20+len(data)))
 	err := binary.Write(&buffer, binary.BigEndian, psdHeader)
 	if err != nil {
 		return nil, err
@@ -142,6 +142,7 @@ func (tcp *TCPHeader) SerializeHeader(ip *IPHeader) ([]byte, error) {
 		return nil, err
 	}
 	sum := checkSum(buffer.Bytes())
+
 	tcp.Checksum = sum
 
 	buffer.Reset()
@@ -167,9 +168,9 @@ func NewUDPHeader(srcPort, dstPort, dataLen uint16) *UDPHeader {
 	}
 }
 
-func (udp *UDPHeader) SerializeHeader(ip *IPHeader) ([]byte, error) {
+func (udp *UDPHeader) SerializeHeader(ip *IPHeader, data []byte) ([]byte, error) {
 	var buffer bytes.Buffer
-	psdHeader := NewPsdHeader(ip.SrcIP, ip.DstIP, uint8(layers.IPProtocolUDP))
+	psdHeader := NewPsdHeader(ip.SrcIP, ip.DstIP, uint8(layers.IPProtocolUDP), uint16(8+len(data)))
 	err := binary.Write(&buffer, binary.BigEndian, psdHeader)
 	if err != nil {
 		return nil, err
@@ -198,12 +199,12 @@ type PsdHeader struct {
 	Length    uint16
 }
 
-func NewPsdHeader(srcIP, dstIP uint32, protocol uint8) *PsdHeader {
+func NewPsdHeader(srcIP, dstIP uint32, protocol uint8, l uint16) *PsdHeader {
 	return &PsdHeader{
 		SrcIP:     srcIP,
 		DstIP:     dstIP,
 		Zero:      0,
 		ProtoType: protocol,
-		Length:    0,
+		Length:    l,
 	}
 }

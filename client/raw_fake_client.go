@@ -48,7 +48,7 @@ func (r *rawFakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLa
 	}
 	payload := payloadLayer.(*gopacket.Payload).Payload()
 
-	resolveLayer, protocol, err := resolveTransferHeader(transferLayer, uint16(len(payload)))
+	resolveLayer, protocol, err := resolveTransferHeader(transferLayer, payload)
 	if err != nil {
 		return 0, err
 	}
@@ -74,7 +74,7 @@ func (r *rawFakeClient) Send(transferLayer, payloadLayer gopacket.SerializableLa
 	return len(data), nil
 }
 
-func resolveTransferHeader(transferLayer gopacket.SerializableLayer, dataLen uint16) (ITransferLayer, layers.IPProtocol, error) {
+func resolveTransferHeader(transferLayer gopacket.SerializableLayer, data []byte) (ITransferLayer, layers.IPProtocol, error) {
 	var (
 		tcpHeader *TCPHeader
 		udpHeader *UDPHeader
@@ -86,7 +86,7 @@ func resolveTransferHeader(transferLayer gopacket.SerializableLayer, dataLen uin
 		return tcpHeader, layers.IPProtocolTCP, nil
 	case *layers.UDP:
 		udp := transferLayer.(*layers.UDP)
-		udpHeader = NewUDPHeader(uint16(udp.SrcPort), uint16(udp.DstPort), dataLen)
+		udpHeader = NewUDPHeader(uint16(udp.SrcPort), uint16(udp.DstPort), uint16(len(data)))
 		return udpHeader, layers.IPProtocolUDP, nil
 	}
 	return nil, 0, fmt.Errorf("not valid type of transfer layer")
@@ -147,18 +147,18 @@ func newPackageData(ethHeader *EthernetHeader, ipHeader *IPHeader, transferHead 
 
 	switch transferHead.(type) {
 	case *TCPHeader:
-		transferByte, err = transferHead.SerializeHeader(ipHeader)
+		transferByte, err = transferHead.SerializeHeader(ipHeader, data)
 	case *UDPHeader:
-		transferByte, err = transferHead.SerializeHeader(ipHeader)
+		transferByte, err = transferHead.SerializeHeader(ipHeader, data)
 	default:
 		err = fmt.Errorf("not valid type of transfer header")
 	}
 	if err != nil {
 		return nil, err
 	}
-
 	res := eth
 	res = append(res, ip...)
 	res = append(res, transferByte...)
+	res = append(res, data...)
 	return res, nil
 }

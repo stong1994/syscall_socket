@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -9,6 +10,19 @@ import (
 	"tcp_server/client"
 	tools "tcp_server/toos"
 )
+
+var (
+	srcIP, dstIP     string
+	srcPort, dstPort int
+)
+
+func init() {
+	flag.Parse()
+	flag.StringVar(&srcIP, "srcIP", "4.3.2.1", "源IP")
+	flag.StringVar(&dstIP, "dstIP", "1.2.3.4", "目标IP")
+	flag.IntVar(&srcPort, "srcPort", 22, "源端口")
+	flag.IntVar(&dstPort, "dstPort", 21, "目的端口")
+}
 
 func main() {
 	var c api.IClient
@@ -27,11 +41,9 @@ func main() {
 		Ack:     103,
 		SYN:     true,
 		Window:  6666,
-		//Checksum:   7777,
 		Urgent: 1,
 	}
-	udp := createUDPLayer()
-	_ = udp
+
 	data := "hello is me"
 	payload := gopacket.Payload([]byte(data))
 	send, err := c.Send(&tcp, &payload)
@@ -41,17 +53,10 @@ func main() {
 	fmt.Println("result len", send)
 }
 
-func param() (srcIP, dstIP net.IP, srcPort, dstPort layers.TCPPort) {
-	srcIP, _ = tools.String2IPV4("1.2.3.4")
-	dstIP, _ = tools.String2IPV4("154.208.143.31")
-	srcPort = tools.Int2TCPPort(123)
-	dstPort = tools.Int2TCPPort(9999)
-	return
-}
-
-func createUDPLayer() (udp *layers.UDP) {
-	udp = &layers.UDP{}
-	udp.SrcPort = layers.UDPPort(12345)
-	udp.DstPort = layers.UDPPort(9999)
+func param() (sIP, dIP net.IP, sPort, dPort layers.TCPPort) {
+	sIP, _ = tools.String2IPV4(srcIP)
+	dIP, _ = tools.String2IPV4(dstIP)
+	sPort = tools.Int2TCPPort(srcPort)
+	dPort = tools.Int2TCPPort(dstPort)
 	return
 }
