@@ -17,7 +17,6 @@ var (
 )
 
 func init() {
-	flag.Parse()
 	flag.StringVar(&srcIP, "srcIP", "4.3.2.1", "源IP")
 	flag.StringVar(&dstIP, "dstIP", "1.2.3.4", "目标IP")
 	flag.IntVar(&srcPort, "srcPort", 22, "源端口")
@@ -25,6 +24,8 @@ func init() {
 }
 
 func main() {
+	flag.Parse()
+
 	var c api.IClient
 	srcIP, dstIP, srcPort, dstPort := param()
 	fmt.Println(srcIP, dstIP, srcPort, dstPort)
