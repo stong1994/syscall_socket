@@ -1,4 +1,4 @@
-module tcp_server
+module syscall_socket
 
 go 1.12
 

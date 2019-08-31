@@ -7,7 +7,7 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/routing"
 	"net"
-	tools "tcp_server/toos"
+	tools "syscall_socket/toos"
 )
 
 type rawFakeClient struct {

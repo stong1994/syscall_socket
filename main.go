@@ -6,9 +6,9 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"net"
-	"tcp_server/api"
-	"tcp_server/client"
-	tools "tcp_server/toos"
+	"syscall_socket/api"
+	"syscall_socket/client"
+	tools "syscall_socket/toos"
 )
 
 var (
@@ -41,7 +41,7 @@ func main() {
 		Ack:     103,
 		SYN:     true,
 		Window:  6666,
-		Urgent: 1,
+		Urgent:  1,
 	}
 
 	data := "hello is me"

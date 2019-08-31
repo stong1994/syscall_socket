@@ -3,8 +3,8 @@ package test
 import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"tcp_server/client"
-	tools "tcp_server/toos"
+	"syscall_socket/client"
+	tools "syscall_socket/toos"
 	"testing"
 )
 
@@ -19,7 +19,7 @@ func TestTCPPackage(t *testing.T) {
 		Urgent:  1,
 	}
 	var (
-		data = "hello is me"
+		data  = "hello is me"
 		srcIP = "1.2.3.4"
 		dstIP = "4.3.2.1"
 	)
@@ -44,7 +44,7 @@ func TestUDPPackage(t *testing.T) {
 		DstPort: 21,
 	}
 	var (
-		data = "hello is me"
+		data  = "hello is me"
 		srcIP = "1.2.3.4"
 		dstIP = "4.3.2.1"
 	)
