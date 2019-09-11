@@ -23,6 +23,9 @@ func NewGopacketFakeClient(srcIP, dstIP net.IP, srcPort, dstPort layers.TCPPort)
 		return nil, err
 	}
 	client, err := newClient(dstIP, router)
+	if err != nil {
+		return nil, err
+	}
 	return &gopacketFakeClient{
 		srcIP:   srcIP,
 		srcPort: srcPort,
